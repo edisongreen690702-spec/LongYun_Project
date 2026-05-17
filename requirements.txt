@@ -1,0 +1,8 @@
+pandas
+requests
+yfinance
+google-genai
+streamlit
+pydantic
+plotly
+firebase-admin
