@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue May 19 18:51:00 2026
+Created on Tue May 19 19:18:56 2026
 
 @author: ediso
 """
 
-import os, json, datetime, requests
+import os, json, datetime, requests, time
 import xml.etree.ElementTree as ET
 from urllib.parse import quote
 from google import genai
@@ -73,7 +73,7 @@ def fetch_rss_news(keyword, count=10):
         return "- 暫無數據"
 
 def run():
-    print("👁️ 龍雲全知矩陣啟動：加入全球地理定位感知...")
+    print("👁️ 龍雲全知矩陣啟動：加入全球地理定位感知與自我修復基因...")
     
     if not firebase_admin._apps:
         if "FIREBASE_CREDENTIALS" in os.environ:
@@ -104,7 +104,6 @@ def run():
     [最新科技數據]:\n{data_science}
     """
 
-    print("🧠 大腦運算中：啟動降維打擊與地理座標推算...")
     prompt = f"""
     你現在是「上帝之眼 OS」，一個擁有超越人類維度思考能力的 AI 矩陣。請根據以下今日的全球網路數據，執行五個維度的終極運算：
     1. 黑天鵝雷達：從[邊緣異動]中找出3個微小震動，預警骨牌效應。並且務必推測出該事件發生地點的「精確緯度(lat)與經度(lon)」(若未提及具體地點，請推測最可能爆發危機的國家或城市座標)。
@@ -121,8 +120,25 @@ def run():
         temperature=0.8 
     )
     
-    response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt, config=config)
-    result = json.loads(response.text)
+    # 🧬 植入強韌的自我修復基因 (Try-Except 自動休眠重試邏輯)
+    max_retries = 3
+    retry_delay = 10
+    result = None
+
+    for attempt in range(max_retries):
+        try:
+            print(f"🧠 大腦運算中：啟動降維打擊與地理座標推算... (第 {attempt + 1} 次嘗試)")
+            response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt, config=config)
+            result = json.loads(response.text)
+            break # 運算成功，直接跳出重試迴圈
+        except Exception as e:
+            print(f"⚠️ 大腦遭遇系統亂流 (錯誤原因: {e})")
+            if attempt < max_retries - 1:
+                print(f"⏳ 觸發自我修復基因：進入冷卻休眠，等待 {retry_delay} 秒後重新嘗試...")
+                time.sleep(retry_delay)
+            else:
+                print("❌ 自我修復失敗，已達最大重試次數。請稍後檢查伺服器狀態。")
+                raise e # 所有嘗試皆失敗，拋出錯誤終止程式
 
     TW_TZ = datetime.timezone(datetime.timedelta(hours=8))
     now_tw = datetime.datetime.now(TW_TZ)
