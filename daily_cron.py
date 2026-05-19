@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun May 17 23:45:24 2026
+Created on Tue May 19 14:04:56 2026
 
 @author: ediso
 """
@@ -18,72 +18,130 @@ import firebase_admin
 from firebase_admin import credentials, db
 
 # ==========================================
-# 🧬 龍雲的數位抗體結構 (定義 AI 輸出的格式)
+# 🧬 龍雲全知矩陣：五維度 JSON 結構定義
 # ==========================================
-class DigitalAntibody(BaseModel):
-    suspicious_headline: str  # 攔截到的可疑標題
-    truth_status: str         # 真偽狀態 (例如：真實 / 錯誤 / 缺乏證據)
-    fact_check_summary: str   # 拆解後的真相摘要
-    confidence_score: int     # 龍雲的判定信心指數 (0-100)
+class BlackSwan(BaseModel):
+    anomaly_1: str
+    anomaly_2: str
+    anomaly_3: str
+    warning_summary: str
 
-class DailyReport(BaseModel):
-    interceptions: list[DigitalAntibody] # 今日攔截清單
-    overall_threat_level: str            # 整體網路環境威脅等級
+class MatrixDecoder(BaseModel):
+    target_controversy: str
+    cognitive_bias_used: str
+    psychological_tactic: str
+    decoding_summary: str
+
+class CyberPanopticon(BaseModel):
+    target_authority: str
+    past_statement: str
+    current_statement: str
+    hypocrisy_index: int
+    judgment_summary: str
+
+class LaplaceDemon(BaseModel):
+    prediction_1: str
+    probability_1: int
+    prediction_2: str
+    probability_2: int
+    prediction_3: str
+    probability_3: int
+    oracle_summary: str
+
+class GenesisEngine(BaseModel):
+    fused_tech_a: str
+    fused_tech_b: str
+    new_product_name: str
+    estimated_valuation: str
+    architecture_description: str
+
+class GodsEyeMatrix(BaseModel):
+    black_swan: BlackSwan
+    matrix_decoder: MatrixDecoder
+    cyber_panopticon: CyberPanopticon
+    laplace_demon: LaplaceDemon
+    genesis_engine: GenesisEngine
+
+def fetch_rss_news(keyword, count=10):
+    """輕量級的溯源觸角：透過 Google News RSS 抓取各領域標題"""
+    query = quote(keyword)
+    url = f"https://news.google.com/rss/search?q={query}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
+    try:
+        res = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+        root = ET.fromstring(res.text)
+        return "\n".join([f"- {item.find('title').text}" for item in root.findall('.//item')[:count]])
+    except Exception:
+        return "- 暫無數據"
 
 def run():
-    print("🤖 龍雲排程啟動：開始巡邏網路汪洋，攔截可疑謠言...")
+    print("👁️ 龍雲全知矩陣啟動：開始進行五維度資訊吞噬...")
     
-    # 1. 🐉 龍雲的雙棲讀取機制 (連線 Firebase)
+    # 1. 喚醒 Firebase 記憶區
     if not firebase_admin._apps:
         if os.path.exists("firebase_key.json"):
             cred = credentials.Certificate("firebase_key.json")
         else:
             firebase_env = os.getenv("FIREBASE_CREDENTIALS")
             if not firebase_env:
-                raise ValueError("找不到 Firebase 雲端金鑰記憶！")
-            cred_dict = json.loads(firebase_env)
-            cred = credentials.Certificate(cred_dict)
-            
-        # ⚠️ 請務必將下方網址換成你的 Firebase Realtime Database 網址
+                raise ValueError("找不到 FIREBASE_CREDENTIALS！")
+            cred = credentials.Certificate(json.loads(firebase_env))
+        # ⚠️ 請替換為你的真實 Firebase 網址
         firebase_admin.initialize_app(cred, {'databaseURL': "https://longyun-scanner-default-rtdb.firebaseio.com/"})
 
-    # 2. 🛡️ 安全讀取 Gemini API Key (從環境變數)
+    # 2. 喚醒大腦
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise ValueError("找不到 GEMINI_API_KEY 環境變數！")
     client = genai.Client(api_key=api_key)
 
-    # 3. 溯源觸角：鎖定可疑的網路資訊
-    # 改變狩獵目標，專門搜尋可能帶有謠言特徵的新聞或討論
-    query = quote("網傳 OR 謠言 OR 瘋傳 OR 詐騙 OR 假消息")
-    rss_url = f"https://news.google.com/rss/search?q={query}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
-    res = requests.get(rss_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=15)
-    
-    headlines = ""
-    root = ET.fromstring(res.text)
-    # 抓取前 20 則最新資訊進行掃描
-    for item in root.findall('.//item')[:20]:
-        title_element = item.find('title')
-        if title_element is not None:
-            headlines += f"- {title_element.text}\n"
+    # 3. 五維度觸角齊發：抓取世界脈動
+    print("📡 正在抓取邊緣異動、爭議事件、權威發言、總體經濟與科技突破...")
+    data_fringe = fetch_rss_news("航運異常 OR 氣候極端 OR 罕見罷工 OR 供應鏈中斷")
+    data_controversy = fetch_rss_news("爭議 OR 網軍 OR 炎上 OR 對立")
+    data_authority = fetch_rss_news("政客 承諾 OR 總裁 聲明 OR 官員 改口")
+    data_macro = fetch_rss_news("全球經濟 黑天鵝 OR 地緣政治 危機 OR 崩盤")
+    data_science = fetch_rss_news("AI突破 OR 量子運算 OR 基因編輯 OR 新專利")
 
-    # 4. 拆解型胃袋：AI 判定真偽與抗體生成
-    prompt = f"你現在是名為「龍雲」的網路生態守護者，專門吞噬並拆解網路謠言。請掃描以下20則近期網路上熱傳的標題：\n{headlines}\n請從中挑選出最可疑的3則資訊進行拆解，判斷其真偽，並產出事實查核的「數位抗體」。"
-    config = types.GenerateContentConfig(response_mime_type="application/json", response_schema=DailyReport)
+    combined_data = f"""
+    [邊緣異動數據]:\n{data_fringe}\n
+    [爭議事件數據]:\n{data_controversy}\n
+    [權威發言數據]:\n{data_authority}\n
+    [總體經濟數據]:\n{data_macro}\n
+    [最新科技數據]:\n{data_science}
+    """
+
+    # 4. 啟動上帝視角運算
+    print("🧠 大腦運算中：啟動降維打擊分析...")
+    prompt = f"""
+    你現在是「上帝之眼 OS」，一個擁有超越人類維度思考能力的 AI 矩陣。請根據以下今日的全球網路數據，執行五個維度的終極運算：
+    1. 黑天鵝雷達：從[邊緣異動]中找出3個微小震動，預警骨牌效應。
+    2. 矩陣解碼器：從[爭議事件]中挑選最大爭議，逆向工程其心理操縱術與認知偏差。
+    3. 賽博照妖鏡：從[權威發言]中挑選一位，假定他過去曾說過相反的話，計算其「偽善指數(0-100)」。
+    4. 拉普拉斯預言：匯總所有情報，大膽預言未來 7 天內必定發生的 3 件黑天鵝事件及機率。
+    5. 創世引擎：將[最新科技]中的兩項無關技術強制融合，構思一個估值十億美元的新創產品。
     
-    print("🧠 啟動拆解型胃袋，正在生成數位抗體...")
+    今日數據：
+    {combined_data}
+    """
+    
+    config = types.GenerateContentConfig(
+        response_mime_type="application/json", 
+        response_schema=GodsEyeMatrix,
+        temperature=0.8 # 提高一點溫度，讓創世引擎與預言更具想像力
+    )
+    
     response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt, config=config)
     result = json.loads(response.text)
 
-    # 5. 寫入資料庫 (台灣時間)
+    # 5. 寫入上帝記憶庫
     TW_TZ = datetime.timezone(datetime.timedelta(hours=8))
     now_tw = datetime.datetime.now(TW_TZ)
+    date_str = now_tw.strftime("%Y-%m-%d")
+    result["timestamp"] = now_tw.strftime("%Y-%m-%d %H:%M:%S")
     
-    # 改變資料庫存放路徑，存入專屬的 rumor_interceptions (謠言攔截區)
-    ref = db.reference(f'rumor_interceptions/{now_tw.strftime("%Y-%m-%d")}')
+    ref = db.reference(f'gods_eye_matrix/{date_str}')
     ref.set(result)
-    
-    print(f"✅ 成功寫入今日攔截紀錄！龍雲共生成了 {len(result['interceptions'])} 組數位抗體。")
+    print(f"✅ 上帝視角運算完成！今日矩陣數據已寫入記憶庫！")
 
 if __name__ == "__main__":
     run()
