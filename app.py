@@ -1,116 +1,100 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue May 19 14:07:56 2026
+Created on Tue May 19 15:08:17 2026
 
 @author: ediso
 """
 
 import streamlit as st
+import pandas as pd
 import firebase_admin
 from firebase_admin import credentials, db
-import os
-import json
+import os, json
 
-st.set_page_config(page_title="龍雲 | God's Eye OS", page_icon="👁️", layout="wide")
+# 初始化 Firebase 連線
+@st.cache_resource
+def init_firebase():
+    if not firebase_admin._apps:
+        # 優先讀取環境變數，若無則讀取本機檔案
+        if "FIREBASE_CREDENTIALS" in os.environ:
+            cred_dict = json.loads(os.environ["FIREBASE_CREDENTIALS"])
+            cred = credentials.Certificate(cred_dict)
+        else:
+            cred = credentials.Certificate("firebase_key.json")
+        firebase_admin.initialize_app(cred, {'databaseURL': "https://longyun-scanner-default-rtdb.firebaseio.com/"})
 
-# 賽博龐克風格標題
-st.markdown("<h1 style='text-align: center; color: #00FFCC;'>👁️ 龍雲：全知矩陣 (God's Eye OS)</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #AAAAAA;'>上帝視角已連線 / 每日五維度降維打擊分析系統</p>", unsafe_allow_html=True)
-st.divider()
+init_firebase()
 
-@st.cache_data(ttl=3600)
+st.set_page_config(page_title="龍雲 | 戰略儀表板", layout="wide")
+st.title("👁️ 龍雲：戰略儀表板 (God's Eye OS)")
+
+# 1. 互動式對話介面 (決策模擬)
+with st.expander("💬 與龍雲進行決策模擬 (Scenario Planning)"):
+    user_scenario = st.text_input("輸入你想模擬的情境：")
+    if st.button("啟動模擬"):
+        st.write(f"龍雲正在分析情境：{user_scenario} ...")
+        # 這裡未來可串接 Gemini API 進行即時推演
+
+# 2. 歷史回顧側邊欄
+st.sidebar.header("控制台")
+selected_date = st.sidebar.date_input("回顧日期")
+
+# 3. 讀取數據
+@st.cache_data(ttl=600)
 def load_data():
     try:
-        if not firebase_admin._apps:
-            if os.path.exists("firebase_key.json"):
-                cred = credentials.Certificate("firebase_key.json")
-            else:
-                firebase_env = os.getenv("FIREBASE_CREDENTIALS")
-                if not firebase_env:
-                    return {"error": "雲端缺少 Firebase 金鑰記憶。"}
-                cred = credentials.Certificate(json.loads(firebase_env))
-            # ⚠️ 請替換為你的真實 Firebase 網址
-            firebase_admin.initialize_app(cred, {'databaseURL': "https://longyun-scanner-default-rtdb.firebaseio.com/"})
-        
-        # 讀取全知矩陣的最新一天數據
         ref = db.reference('gods_eye_matrix')
         data = ref.get()
-        if data:
-            latest_date = sorted(data.keys())[-1]
-            return data[latest_date]
-        return None
+        return data
     except Exception as e:
         return {"error": str(e)}
 
-matrix_data = load_data()
+data = load_data()
 
-if matrix_data and "error" not in matrix_data:
-    st.caption(f"⏱️ 最後運算時間: {matrix_data.get('timestamp', '未知')}")
+if data:
+    # 根據選擇的日期抓取資料
+    date_str = selected_date.strftime("%Y-%m-%d")
+    matrix_data = data.get(date_str)
     
-    # 建立五個維度的控制面板分頁
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "📡 第一維度：黑天鵝雷達", 
-        "👁️ 第二維度：矩陣解碼器", 
-        "⚖️ 第三維度：賽博照妖鏡", 
-        "🔮 第四維度：拉普拉斯預言", 
-        "🧬 第五維度：創世引擎"
-    ])
-    
-    # 1. 邊緣感知 (黑天鵝雷達)
-    with tab1:
-        st.header("📡 尋找底層的微小震動")
-        bs = matrix_data['black_swan']
-        st.error(f"**高危險預警總結**：\n{bs['warning_summary']}")
-        st.info(f"🦋 震動 1：{bs['anomaly_1']}")
-        st.info(f"🦋 震動 2：{bs['anomaly_2']}")
-        st.info(f"🦋 震動 3：{bs['anomaly_3']}")
-
-    # 2. 解構當下 (矩陣解碼器)
-    with tab2:
-        st.header("👁️ 逆向工程網路風向")
-        md = matrix_data['matrix_decoder']
-        st.subheader(f"🎯 目標事件：{md['target_controversy']}")
-        col1, col2 = st.columns(2)
-        col1.warning(f"**利用的認知偏差**：\n{md['cognitive_bias_used']}")
-        col2.warning(f"**心理操縱戰術**：\n{md['psychological_tactic']}")
-        st.success(f"**龍雲解碼結論**：\n{md['decoding_summary']}")
-
-    # 3. 審判權威 (賽博照妖鏡)
-    with tab3:
-        st.header("⚖️ 權威人士的歷史審判")
-        cp = matrix_data['cyber_panopticon']
-        st.subheader(f"👨‍⚖️ 審判目標：{cp['target_authority']}")
+    if matrix_data:
+        st.subheader(f"📅 數據時間點: {matrix_data.get('timestamp', date_str)}")
         
-        st.metric(label="血色偽善指數 (0-100)", value=f"{cp['hypocrisy_index']}%", delta="高度警戒" if cp['hypocrisy_index'] > 70 else "尚可接受", delta_color="inverse")
+        tab1, tab2, tab3, tab4, tab5 = st.tabs([
+            "📡 1. 黑天鵝雷達", 
+            "👁️ 2. 矩陣解碼器", 
+            "⚖️ 3. 賽博照妖鏡", 
+            "🔮 4. 拉普拉斯預言", 
+            "🧬 5. 創世引擎"
+        ])
         
-        col1, col2 = st.columns(2)
-        col1.info(f"**過去的承諾**：\n{cp['past_statement']}")
-        col2.error(f"**今日的發言**：\n{cp['current_statement']}")
-        st.markdown(f"> **龍雲無情點評**：{cp['judgment_summary']}")
+        with tab1:
+            st.info(f"**預警總結**：{matrix_data['black_swan']['warning_summary']}")
+            st.write(f"🦋 {matrix_data['black_swan']['anomaly_1']}")
+            st.write(f"🦋 {matrix_data['black_swan']['anomaly_2']}")
+            st.write(f"🦋 {matrix_data['black_swan']['anomaly_3']}")
 
-    # 4. 預測未來 (拉普拉斯預言機)
-    with tab4:
-        st.header("🔮 來自未來的神諭")
-        ld = matrix_data['laplace_demon']
-        st.write(f"**預言機總結**：{ld['oracle_summary']}")
-        
-        st.progress(ld['probability_1'] / 100, text=f"機率 {ld['probability_1']}% - {ld['prediction_1']}")
-        st.progress(ld['probability_2'] / 100, text=f"機率 {ld['probability_2']}% - {ld['prediction_2']}")
-        st.progress(ld['probability_3'] / 100, text=f"機率 {ld['probability_3']}% - {ld['prediction_3']}")
+        with tab2:
+            st.write(f"**目標**：{matrix_data['matrix_decoder']['target_controversy']}")
+            st.warning(f"**操縱戰術**：{matrix_data['matrix_decoder']['psychological_tactic']}")
+            st.success(f"**解碼**：{matrix_data['matrix_decoder']['decoding_summary']}")
 
-    # 5. 創世解答 (跨維度創世引擎)
-    with tab5:
-        st.header("🧬 巔峰科技的狂妄融合")
-        ge = matrix_data['genesis_engine']
-        st.subheader(f"💡 顛覆性產品：{ge['new_product_name']}")
-        st.metric("華爾街預估初始估值", ge['estimated_valuation'])
-        
-        col1, col2 = st.columns(2)
-        col1.success(f"**融合技術 A**：{ge['fused_tech_a']}")
-        col2.success(f"**融合技術 B**：{ge['fused_tech_b']}")
-        st.info(f"**產品架構與商業模式**：\n{ge['architecture_description']}")
+        with tab3:
+            st.metric("偽善指數", f"{matrix_data['cyber_panopticon']['hypocrisy_index']}%")
+            st.write(f"過去承諾：{matrix_data['cyber_panopticon']['past_statement']}")
+            st.write(f"今日發言：{matrix_data['cyber_panopticon']['current_statement']}")
 
+        with tab4:
+            ld = matrix_data['laplace_demon']
+            st.progress(ld['probability_1']/100, text=ld['prediction_1'])
+            st.progress(ld['probability_2']/100, text=ld['prediction_2'])
+            st.progress(ld['probability_3']/100, text=ld['prediction_3'])
+
+        with tab5:
+            st.subheader(matrix_data['genesis_engine']['new_product_name'])
+            st.write(f"估值：{matrix_data['genesis_engine']['estimated_valuation']}")
+            st.info(matrix_data['genesis_engine']['architecture_description'])
+            
+    else:
+        st.warning(f"該日期 {date_str} 尚未有數據記錄。")
 else:
-    st.warning("⚠️ 矩陣尚未啟動，請手動執行 `python daily_cron.py` 讓大腦進行第一次全知運算！")
-    if matrix_data and "error" in matrix_data:
-        st.error(matrix_data["error"])
+    st.error("無法連線至 Firebase 資料庫，請檢查環境變數。")
