@@ -1,0 +1,24 @@
+name: Daily Gods Eye Matrix Tracker
+
+on:
+  schedule:
+    # 設定每天自動喚醒的時間 (例如 UTC 08:30 等於台灣時間 16:30)
+    - cron: '30 8 * * *'
+  workflow_dispatch: # 允許在 GitHub 手動點擊測試
+
+jobs:
+  run-matrix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: pip install requests google-genai pydantic firebase-admin
+      - name: Run Matrix Engine
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_CREDENTIALS }}
+        run: python daily_cron.py
